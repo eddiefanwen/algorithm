@@ -1,5 +1,21 @@
 import java.util.Scanner;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Vector;
 
+class TestCase
+{
+    // the array to store input number in each group
+    public int[] input_arr;
+    public int input_size;  
+    // the expected output array
+    public int[] output_arr;
+    TestCase()
+    {
+        input_size = 0;
+    }
+}
 
 // the class of SORTING DEMO
 // contrains the array,size
@@ -9,6 +25,7 @@ class Sort
     protected int size;
     protected int[] arr;
     protected final int INFINITY = 9999;
+    protected Vector<TestCase> testcases;
     Sort()
     {
         size = 0;
@@ -83,6 +100,109 @@ class Sort
             System.out.print('\n');
         }
     }
+
+    // input test data from the file "testcase.txt"
+    boolean Input_test_data() throws IOException
+    {
+        int line_num = 0;
+        boolean has_error = false;
+        // the string to store each line
+        String str;
+        // the vector to store the info of testcases
+        testcases = new Vector<TestCase>();
+        try
+        {
+            BufferedReader in = new BufferedReader
+                    (new FileReader("testcase.txt"));
+            // read the file
+            while( (str = in.readLine()) != null && !has_error )
+            {
+                // record the line read for error report
+                line_num++;
+                // skip the annotation and blank space
+                if( str.startsWith("//") || str.equals("") )
+                {
+                    continue;
+                }   
+
+                boolean read_group_finish = false;
+                TestCase tc = new TestCase();
+                // use state to receive input
+                int state = 1;
+                // parse the input of each group
+                while( (str = in.readLine()) != null 
+                    && !has_error && !read_group_finish )
+                {  
+                    switch(state)
+                    {
+                        // 1 -> 2: input size of that group
+                        case 1:
+                            tc.input_size = Integer.parseInt(str);
+                            state = 2;
+                            break;
+                        // 2 -> 3: input origin data
+                        case 2:
+                            // use regular expression to split str
+                            // "\\s" means multiple blankspace
+                            String[] input_str;
+                            input_str = str.split("\\s+");
+                            // expected input size != actual input size
+                            if(input_str.length != tc.input_size )
+                            {
+                                System.out. println("expected input size" + 
+                                    " != actual input size: line " + line_num);
+                                has_error = true;
+                                break;
+                            }
+                            else
+                            {
+                                // input the data to input_arr
+                                tc.input_arr = new int[tc.input_size];
+                                for(int i = 0;i < tc.input_size;++i)
+                                {
+                                    tc.input_arr[i] = Integer.parseInt(input_str[i]);
+                                }
+                                state = 3;
+                                break;
+                            }
+                        // 3 -> 1, get expected output data
+                        case 3:
+                            input_str = str.split("\\s+");
+                            // input the data to input_arr
+                            if(input_str.length != tc.input_size )
+                            {
+                                System.out. println("expected input size" + 
+                                    " != actual input size: line " + line_num);
+                                has_error = true;
+                                break;
+                            }
+                            else
+                            {
+                                tc.output_arr = new int[tc.input_size];
+                                for(int i = 0;i < tc.input_size;++i)
+                                {
+                                    tc.output_arr[i] = Integer.parseInt(input_str[i]);
+                                }
+                                // INPUT is complete
+                                testcases.addElement(tc);
+                                read_group_finish = true;
+                                state = 1;
+                            }
+                            break;
+                    }// switch
+                }// while
+            }// while
+            in.close();
+        }
+        catch (IOException e) 
+        { 
+            e.printStackTrace();
+        } 
+
+        // if there is error, return false
+        // else, return true
+        return !has_error;
+    }// auto_test()
 }
 
 // a specific Sort demo
@@ -309,16 +429,83 @@ public class BasicSort extends Sort
     }
     */
 
-    public static void main(String args[])
+    // implement sorting of sort_type on each testcase,
+    // compare the expected result and actual result,
+    // and give an answer to show whether the sorting
+    // is correct or not.
+    // @param sort_type: which method to sort
+    // selection -- selection sort
+    // insertion -- insertion sort
+    // merge -- merge sort
+    // else -- report the error and do not sort
+    void auto_test_sort(String sort_type)
+    {
+        System.out.println("########################################################");
+        for( TestCase tc : testcases)
+        {
+            size = tc.input_size;
+            arr = new int[size + 0];
+            for(int i = 0; i < size;++i)
+                arr[i] = tc.input_arr[i];
+            // choose to sort according to the sort_type
+            if( sort_type.equals("selection") )
+            {
+                System.out.println("selection sort:");
+                Selection_sort();
+            }
+            else if( sort_type.equals("insertion") )
+            {
+                System.out.println("insertion sort:");
+                Insertion_sort();
+            }
+            else if( sort_type.equals("merge") )
+            {
+                System.out.println("merge sort:");
+                Merge_sort(0,size - 1);
+            }
+            else
+                System.out.println("invalid sorting type");
+            // print the expected output result:
+    
+            System.out.println("expected result:");
+            for(int i = 0;i < size;++i)
+            {
+                System.out.print(tc.output_arr[i] + " ");
+            }
+            System.out.print("\n");
+            // print the actual output result:
+            System.out.println("actual result:");
+            for(int i = 0;i < size;++i)
+            {
+                System.out.print(arr[i] + " ");
+            }
+            System.out.print("\n");
+            // check the whether the sorting is correct
+            boolean correct = true;
+            for(int i = 0; i < size;++i)
+            {
+                if(arr[i] != tc.output_arr[i])
+                {
+                    correct = false;
+                    break;
+                }
+            }
+            if(correct)
+                System.out.println("this testcase is correct");
+            else
+                System.out.println("this testcase is incorrect");
+            System.out.println("----------------------------------");
+        }
+    }
+
+    public static void main(String args[]) throws IOException
     {
         BasicSort bs_demo = new BasicSort();
         Scanner scan = new Scanner(System.in);
-        bs_demo.Input_data(scan);
-        // bs_demo.Merge_sort(0, bs_demo.get_size()-1);
-        bs_demo.Selection_sort();
-        System.out.print("after sort, ");
-        bs_demo.Output_data();
+        bs_demo.Input_test_data();
+        bs_demo.auto_test_sort("selection");
+        bs_demo.auto_test_sort("insertion");
+        bs_demo.auto_test_sort("merge");
         scan.close();
     }
 }
-
